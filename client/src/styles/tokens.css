@@ -1,0 +1,92 @@
+/*
+ * Design Token System -- Codex Theme
+ *
+ * 架构决策：为什么用 CSS Custom Properties 而不是 Tailwind 的 dark: modifier？
+ * 1. dark: 会在输出 CSS 中重复每一个工具类，增加包体积
+ * 2. CSS 变量只需切换 data-theme 属性，零 JS 重渲染
+ * 3. 未来可扩展第三套主题（高对比度等）而不碰组件代码
+ *
+ * 使用方式：在 Tailwind 中写 bg-surface / text-ink / border-border，
+ * 自动跟随 html[data-theme] 属性切换明暗主题。
+ *
+ * 来源：Codex theme JSON（用户提供）
+ * - Light: contrast=45, variant=light
+ * - Dark:  contrast=60, variant=dark
+ */
+
+:root,
+[data-theme="light"] {
+  /* === Core Palette === */
+  --color-accent: #5e6ad2;
+  --color-ink: #1b1b1b;
+  --color-surface: #fcfcfd;
+
+  /* === Derived Surface Levels (基于 contrast=45 推导) === */
+  --color-surface-raised: #f5f5f7;
+  --color-surface-overlay: #ededf0;
+  --color-surface-sunken: #e8e8ec;
+
+  /* === Derived Ink Levels === */
+  --color-ink-muted: #6b6f76;
+  --color-ink-faint: #9ea2a9;
+
+  /* === Accent Variants === */
+  --color-accent-hover: #4f5bc3;
+  --color-accent-muted: rgba(94, 106, 210, 0.12);
+  --color-accent-text: #4a54b8;
+
+  /* === Semantic Colors === */
+  --color-diff-added: #52a450;
+  --color-diff-removed: #c94446;
+  --color-skill: #8160d8;
+
+  /* === Semantic Surface Variants === */
+  --color-diff-added-bg: rgba(82, 164, 80, 0.1);
+  --color-diff-removed-bg: rgba(201, 68, 70, 0.1);
+
+  /* === Layout / Border === */
+  --color-border: rgba(27, 27, 27, 0.1);
+  --color-border-strong: rgba(27, 27, 27, 0.2);
+  --color-panel-handle: rgba(27, 27, 27, 0.08);
+  --color-panel-handle-hover: rgba(27, 27, 27, 0.16);
+
+  /* === Typography === */
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-code: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+}
+
+[data-theme="dark"] {
+  /* === Core Palette === */
+  --color-accent: #606acc;
+  --color-ink: #e3e4e6;
+  --color-surface: #0f0f11;
+
+  /* === Derived Surface Levels (基于 contrast=60 推导) === */
+  --color-surface-raised: #1a1a1f;
+  --color-surface-overlay: #222228;
+  --color-surface-sunken: #0a0a0c;
+
+  /* === Derived Ink Levels === */
+  --color-ink-muted: #8e9099;
+  --color-ink-faint: #5c5e66;
+
+  /* === Accent Variants === */
+  --color-accent-hover: #7178db;
+  --color-accent-muted: rgba(96, 106, 204, 0.15);
+  --color-accent-text: #8b93e6;
+
+  /* === Semantic Colors === */
+  --color-diff-added: #69c967;
+  --color-diff-removed: #ff7e78;
+  --color-skill: #c2a1ff;
+
+  /* === Semantic Surface Variants === */
+  --color-diff-added-bg: rgba(105, 201, 103, 0.1);
+  --color-diff-removed-bg: rgba(255, 126, 120, 0.1);
+
+  /* === Layout / Border === */
+  --color-border: rgba(227, 228, 230, 0.08);
+  --color-border-strong: rgba(227, 228, 230, 0.16);
+  --color-panel-handle: rgba(227, 228, 230, 0.06);
+  --color-panel-handle-hover: rgba(227, 228, 230, 0.14);
+}
