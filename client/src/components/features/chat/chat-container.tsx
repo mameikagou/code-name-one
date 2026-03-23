@@ -1,57 +1,55 @@
-import { useState } from "react";
+/**
+ * @file Chat 容器 — 纯逻辑组装，零装饰样式
+ *
+ * 职责：读取当前选中会话，获取消息，处理发送。
+ * 渲染委托给 MessageList 和 ChatInput 展示组件。
+ *
+ * 重构说明（原 mock 数据已删除）：
+ *   - INITIAL_MESSAGES → useMessages(sessionId) 真实 API
+ *   - setTimeout mock → useSendMessage(sessionId) 真实 API
+ *   - 新增：未选中会话时显示空状态
+ *
+ * TODO: 后续将 useSendMessage 替换为 SSE 流式接口
+ */
+
+import { useAtomValue } from "jotai";
+import { Loader2, MessageSquare } from "lucide-react";
 import { MessageList } from "./message-list";
 import { ChatInput } from "./chat-input";
+import { useMessages, useSendMessage } from "@/hooks/use-chat";
+import { selectedSessionIdAtom } from "@/stores/session-atom";
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
-
-/**
- * 占位消息数据 -- 后续替换为 TanStack Query + WebSocket
- */
-const INITIAL_MESSAGES: Message[] = [
-  { id: "1", role: "assistant", content: "Hello! I'm your coding assistant. How can I help you today?" },
-  { id: "2", role: "user", content: "Can you help me debug the authentication flow?" },
-  { id: "3", role: "assistant", content: "Of course! Let me look at the auth module. Could you point me to the relevant files?" },
-];
-
-/**
- * Chat 容器组件 -- 数据 + 状态
- *
- * 职责：管理消息列表和发送逻辑。
- * 当前使用 mock 数据，后续接入真实 API。
- * 渲染委托给 MessageList 和 ChatInput 纯展示组件。
- */
 export function ChatContainer() {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const sessionId = useAtomValue(selectedSessionIdAtom);
+  const { data: messages, isLoading } = useMessages(sessionId);
+  const sendMessage = useSendMessage(sessionId);
 
   function handleSend(content: string) {
-    const userMsg: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content,
-    };
-    setMessages((prev) => [...prev, userMsg]);
+    sendMessage.mutate(content);
+  }
 
-    // 模拟助手回复 -- 后续替换为真实 API 调用
-    setTimeout(() => {
-      const assistantMsg: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: `I received your message: "${content}". This is a placeholder response.`,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-    }, 500);
+  // 未选中任何会话
+  if (!sessionId) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-ink-muted">
+        <MessageSquare size={32} className="mb-3 opacity-40" />
+        <p className="text-sm">Select a conversation or create a new one</p>
+      </div>
+    );
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto">
-        <MessageList messages={messages} />
+        {isLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 size={20} className="animate-spin text-ink-muted" />
+          </div>
+        ) : (
+          <MessageList messages={messages ?? []} />
+        )}
       </div>
-      <ChatInput onSend={handleSend} />
+      <ChatInput onSend={handleSend} disabled={sendMessage.isPending} />
     </div>
   );
 }

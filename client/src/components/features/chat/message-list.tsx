@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "tool";
   content: string;
 }
 

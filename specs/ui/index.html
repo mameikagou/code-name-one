@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Coding Assistant UI</title>
+    <style>
+        :root[data-theme="light"] {
+            /* === Core Palette === */
+            --color-accent: #5e6ad2;
+            --color-ink: #1b1b1b;
+            --color-surface: #fcfcfd;
+
+            /* === Derived Surface Levels === */
+            --color-surface-raised: #f5f5f7;
+            --color-surface-overlay: #ededf0;
+            --color-surface-sunken: #e8e8ec;
+
+            /* === Derived Ink Levels === */
+            --color-ink-muted: #6b6f76;
+            --color-ink-faint: #9ea2a9;
+
+            /* === Accent Variants === */
+            --color-accent-hover: #4f5bc3;
+            --color-accent-muted: rgba(94, 106, 210, 0.12);
+            --color-accent-text: #4a54b8;
+
+            /* === Semantic Colors === */
+            --color-diff-added: #52a450;
+            --color-diff-removed: #c94446;
+            --color-skill: #8160d8;
+
+            /* === Semantic Surface Variants === */
+            --color-diff-added-bg: rgba(82, 164, 80, 0.1);
+            --color-diff-removed-bg: rgba(201, 68, 70, 0.1);
+
+            /* === Layout / Border === */
+            --color-border: rgba(27, 27, 27, 0.1);
+            --color-border-strong: rgba(27, 27, 27, 0.2);
+            --color-panel-handle: rgba(27, 27, 27, 0.08);
+            --color-panel-handle-hover: rgba(27, 27, 27, 0.16);
+
+            /* === Typography === */
+            --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-code: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-ui);
+            background-color: var(--color-surface);
+            color: var(--color-ink);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Utility */
+        .flex { display: flex; }
+        .flex-col { display: flex; flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-1 { gap: 4px; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-4 { gap: 16px; }
+        .text-muted { color: var(--color-ink-muted); }
+        .text-faint { color: var(--color-ink-faint); }
+        .text-accent { color: var(--color-accent-text); }
+        .icon { width: 14px; height: 14px; stroke-width: 2; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
+        /* --- Layout --- */
+        .sidebar {
+            width: 240px;
+            background-color: var(--color-surface-raised);
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-panel {
+            flex: 1;
+            min-width: 400px;
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            background-color: var(--color-surface);
+        }
+
+        .diff-panel {
+            flex: 1.2;
+            min-width: 450px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--color-surface);
+        }
+
+        /* --- Sidebar --- */
+        .window-controls {
+            padding: 16px;
+            display: flex;
+            gap: 8px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot.red { background-color: #ff5f56; }
+        .dot.yellow { background-color: #ffbd2e; }
+        .dot.green { background-color: #27c93f; }
+
+        .sidebar-section {
+            padding: 8px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 2px;
+            color: var(--color-ink);
+        }
+        .sidebar-item:hover {
+            background-color: var(--color-surface-overlay);
+        }
+        .sidebar-item .left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .sidebar-item .time {
+            font-size: 11px;
+            color: var(--color-ink-faint);
+            flex-shrink: 0;
+        }
+        .sidebar-footer {
+            padding: 12px 16px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        /* --- Main Panel --- */
+        .panel-header {
+            height: 44px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--color-border);
+            font-size: 13px;
+        }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--color-ink-muted);
+        }
+        .tag {
+            background-color: var(--color-surface-overlay);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--color-ink-muted);
+        }
+
+        .chat-content {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+        .chat-content p { margin-bottom: 12px; }
+        .chat-content ul { list-style: none; padding-left: 0; margin-bottom: 16px; }
+        .chat-content li { 
+            position: relative; 
+            padding-left: 18px; 
+            margin-bottom: 6px;
+        }
+        .chat-content li::before {
+            content: "•";
+            position: absolute;
+            left: 4px;
+            color: var(--color-ink-muted);
+        }
+        
+        .code-inline {
+            background-color: var(--color-surface-overlay);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: var(--font-code);
+            font-size: 12px;
+        }
+
+        .task-list { margin-bottom: 20px; }
+        .task-list-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: var(--color-ink-muted);
+        }
+        .task-list-item.completed {
+            opacity: 0.8;
+        }
+
+        .summary-card {
+            background-color: var(--color-surface-raised);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            margin: 24px 0;
+            overflow: hidden;
+        }
+        .summary-header {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .summary-body { padding: 12px 16px; }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            color: var(--color-ink);
+        }
+        
+        .diff-stats { font-family: var(--font-code); font-size: 12px; }
+        .diff-plus { color: var(--color-diff-added); }
+        .diff-minus { color: var(--color-diff-removed); }
+
+        .input-area {
+            padding: 0 32px 24px 32px;
+        }
+        .input-box {
+            background-color: var(--color-surface);
+            border: 1px solid var(--color-border-strong);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .input-box textarea {
+            width: 100%;
+            border: none;
+            resize: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--color-ink);
+            outline: none;
+            min-height: 40px;
+        }
+        .input-box textarea::placeholder { color: var(--color-ink-faint); }
+        
+        .input-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--color-ink-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .model-selector:hover { background-color: var(--color-surface-overlay); }
+        
+        .send-btn {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background-color: var(--color-ink-faint);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* --- Diff Panel --- */
+        .diff-content {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .file-card {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            background-color: var(--color-surface);
+        }
+        .file-header {
+            padding: 8px 12px;
+            background-color: var(--color-surface-raised);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diff-lines {
+            font-family: var(--font-code);
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        .diff-line {
+            display: flex;
+            min-height: 20px;
+        }
+        .line-num {
+            width: 40px;
+            flex-shrink: 0;
+            padding-right: 8px;
+            text-align: right;
+            color: var(--color-ink-faint);
+            user-select: none;
+            padding-top: 2px;
+        }
+        .line-content {
+            flex: 1;
+            padding: 2px 0 2px 8px;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        
+        /* Added Line Styling */
+        .diff-line.added {
+            background-color: var(--color-diff-added-bg);
+        }
+        .diff-line.added .line-num {
+            color: var(--color-ink-muted);
+        }
+        .diff-line.added .line-content::before {
+            content: "+";
+            position: absolute;
+            left: -8px;
+            color: var(--color-diff-added);
+        }
+        .diff-line.added .line-content {
+            border-left: 2px solid var(--color-diff-added);
+        }
+
+        /* Removed Line Styling */
+        .diff-line.removed {
+            background-color: var(--color-diff-removed-bg);
+        }
+        .diff-line.removed .line-content::before {
+            content: "-";
+            position: absolute;
+            left: -8px;
+            color: var(--color-diff-removed);
+        }
+        .diff-line.removed .line-content {
+            border-left: 2px solid var(--color-diff-removed);
+        }
+        
+        /* Folded Lines */
+        .folded-lines {
+            background-color: var(--color-surface-sunken);
+            color: var(--color-ink-muted);
+            padding: 4px 12px;
+            font-size: 11px;
+            text-align: center;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .btn-icon {
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--color-ink-muted);
+            display: flex;
+        }
+        .btn-icon:hover {
+            background-color: var(--color-surface-overlay);
+            color: var(--color-ink);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="window-controls">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="sidebar-item text-muted" style="margin-bottom: 12px;">
+                <div class="left">我要做一个跟 Gemi...</div>
+                <div class="time">1 个月</div>
+            </div>
+            <div class="sidebar-item text-muted" style="margin-bottom: 12px;">
+                <div class="left">1, 做一个文件上传...</div>
+                <div class="time">1 个月</div>
+            </div>
+            <div class="sidebar-item text-muted" style="margin-bottom: 24px;">
+                <div class="left">你好，这是测试</div>
+                <div class="time">1 个月</div>
+            </div>
+
+            <!-- Folders -->
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    airi
+                </div>
+            </div>
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    dify
+                </div>
+            </div>
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    aider
+                </div>
+            </div>
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    cline
+                </div>
+            </div>
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    openclaw
+                </div>
+            </div>
+            <div class="sidebar-item" style="background-color: var(--color-surface-overlay);">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    OpenHands
+                </div>
+            </div>
+            <div class="sidebar-item text-faint" style="padding-left: 32px; font-size: 12px;">无线程</div>
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    AstrBot
+                </div>
+            </div>
+            <div class="sidebar-item">
+                <div class="left">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    learn-claude-code
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="flex items-center gap-2 text-muted" style="cursor: pointer;">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+                设置
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Panel -->
+    <main class="main-panel">
+        <header class="panel-header">
+            <div class="breadcrumb">
+                <span style="color: var(--color-ink); font-weight: 500;">能不能帮我把 codex cli更新到最新版本吗...</span>
+                <span class="tag">code-name-z</span>
+                <span class="text-faint">···</span>
+            </div>
+            <div class="flex gap-2">
+                <div class="btn-icon"><svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div>
+                <div class="btn-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg></div>
+                <div class="btn-icon text-ink" style="color: var(--color-ink); border: 1px solid var(--color-border); padding: 4px 8px; font-size: 12px; gap:4px;">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><line x1="3" y1="12" x2="9" y2="12"></line><line x1="15" y1="12" x2="21" y2="12"></line></svg>
+                    移至工作树
+                </div>
+                <div class="btn-icon text-ink" style="color: var(--color-ink); border: 1px solid var(--color-border); padding: 4px 8px; font-size: 12px;">提交 <svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; margin-left:4px;"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+            </div>
+        </header>
+
+        <div class="chat-content">
+            <div class="task-list">
+                <div class="task-list-item completed">
+                    <svg class="icon" style="color: var(--color-ink-muted); margin-top:2px;" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><polyline points="9 12 12 15 16 9"></polyline></svg>
+                    <div>
+                        <span class="text-faint">勾选了任务闭环: </span><span class="text-faint code-inline">specs/todos/index.md:42</span>
+                        <ul style="margin-top: 4px; margin-bottom: 0;">
+                            <li>已把 <span class="code-inline text-ink">TODO-005</span> 标记为完成</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <ul>
+                <li><strong>更新了进度记录：</strong> <span class="code-inline">progress.md:1</span>
+                    <ul style="margin-top: 4px;">
+                        <li>记录了这次为什么收尾、收了什么、怎么验收的</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <ul>
+                <li><strong>已完成验收：</strong>
+                    <ul style="margin-top: 4px;">
+                        <li><span class="code-inline">pnpm --filter server build</span> 通过</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <p><strong>第三步：踩坑预警 & 新手教学 (The Gotchas)</strong></p>
+
+            <ul>
+                <li>这类任务最容易出现的假象是：代码早就写完了，但因为没有 build 脚本，todo 永远挂着，后面的人会误以为后端链路没做。</li>
+                <li>我这次没有重写 <span class="code-inline">server/src/api/chat.ts</span>、<span class="code-inline">server/src/infra/runtime/streamers/chatStream.ts</span>、<span class="code-inline">server/src/infra/runtime/sessionRunManager.ts</span>，因为复核后它们已经满足 CH-026 的核心要求；硬改反而容易引入回归。</li>
+                <li>现在最顺的下一步就是继续 TODO-006，把聊天流前端闭环接上。</li>
+            </ul>
+
+            <p>如果你点头，我下一步就继续做 TODO-006。</p>
+
+            <div class="summary-card">
+                <div class="summary-header">
+                    <div style="font-weight: 500;">3 个文件已更改 <span class="diff-stats"><span class="diff-plus">+10</span> <span class="diff-minus">-2</span></span></div>
+                    <div class="flex gap-2 items-center">
+                        <span class="text-muted" style="font-size: 12px;">撤销</span>
+                        <svg class="icon text-muted" viewBox="0 0 24 24" style="width:12px; height:12px;"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
+                    </div>
+                </div>
+                <div class="summary-body">
+                    <div class="summary-item">
+                        <span>progress.md</span>
+                        <span class="diff-stats"><span class="diff-plus">+8</span> <span class="diff-minus">-1</span></span>
+                    </div>
+                    <div class="summary-item">
+                        <span>server/package.json</span>
+                        <span class="diff-stats"><span class="diff-plus">+1</span> <span class="diff-minus">-0</span></span>
+                    </div>
+                    <div class="summary-item">
+                        <span>specs/todos/index.md</span>
+                        <span class="diff-stats"><span class="diff-plus">+1</span> <span class="diff-minus">-1</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-box">
+                <textarea placeholder="要求后续变更"></textarea>
+                <div class="input-toolbar">
+                    <div class="flex gap-2 items-center">
+                        <div class="btn-icon text-muted"><svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+                        <div class="model-selector">
+                            GPT-5.4 <svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                        <div class="text-faint" style="font-size: 11px;">超高 <svg class="icon" viewBox="0 0 24 24" style="width:10px; height:10px;"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+                    </div>
+                    <button class="send-btn">
+                        <svg class="icon" viewBox="0 0 24 24" style="stroke: white;"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Right Diff Panel -->
+    <aside class="diff-panel">
+        <header class="panel-header">
+            <div class="flex items-center gap-2">
+                <span style="font-weight: 500;">未暂存</span>
+                <span class="tag">3 <svg class="icon" viewBox="0 0 24 24" style="width:10px; height:10px; display:inline-block;"><polyline points="6 9 12 15 18 9"></polyline></svg></span>
+            </div>
+            <div class="flex gap-2">
+                <div class="btn-icon"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg></div>
+                <div class="btn-icon"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></div>
+            </div>
+        </header>
+
+        <div class="diff-content">
+            <!-- File 1: progress.md -->
+            <div class="file-card">
+                <div class="file-header">
+                    <span style="font-size: 13px; font-weight: 500;">progress.md <span class="diff-stats" style="margin-left: 8px;"><span class="diff-plus">+8</span> <span class="diff-minus">-1</span></span></span>
+                    <svg class="icon text-muted" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </div>
+                <div class="diff-lines">
+                    <div class="diff-line added">
+                        <div class="line-num">1</div>
+                        <div class="line-content">## 2026-03-23 (执行 TODO-005 收尾闭环)</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">2</div>
+                        <div class="line-content"></div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">3</div>
+                        <div class="line-content">- 已重新读取 `specs/todos/index.md` 与 `specs/02-specs/cha</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">4</div>
+                        <div class="line-content">- 复核 `server/src/api/chat.ts`、`server/src/infra/runtim</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">5</div>
+                        <div class="line-content">- 为了让 TODO 验收命令真正可执行，补充 `server/package.json`</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">6</div>
+                        <div class="line-content">- 验收通过：`pnpm --filter server build` 已成功执行。</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">7</div>
+                        <div class="line-content">- 已在 `specs/todos/index.md` 将 `TODO-005` 标记为完成 ([x]</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">8</div>
+                        <div class="line-content"></div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">9</div>
+                        <div class="line-content">## 2026-03-08 (环境维护：统一 zsh 下的 Node 工具链)</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">10</div>
+                        <div class="line-content"></div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">11</div>
+                        <div class="line-content">- 已读取 `specs/todos/index.md`，按仓库约束确认本轮执行上下文。</div>
+                    </div>
+                    <div class="folded-lines">312 unmodified lines</div>
+                    <div class="diff-line">
+                        <div class="line-num">324</div>
+                        <div class="line-content">- `server/src/infra/ai/codexProvider.ts` - Codex Provide</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">325</div>
+                        <div class="line-content">- `specs/02-specs/chat-core/CH-021-chat-runner-opencode-</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">326</div>
+                        <div class="line-content">- `specs/02-specs/chat-core/CH-026-chat-stream-codex-mvp</div>
+                    </div>
+                    <div class="diff-line removed">
+                        <div class="line-num">319</div>
+                        <div class="line-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File 2: server/package.json -->
+            <div class="file-card">
+                <div class="file-header">
+                    <span style="font-size: 13px; font-weight: 500;">server/package.json <span class="diff-stats" style="margin-left: 8px;"><span class="diff-plus">+1</span> <span class="diff-minus">-0</span></span></span>
+                    <svg class="icon text-muted" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                </div>
+                <div class="diff-lines">
+                    <div class="folded-lines flex justify-between items-center" style="cursor: pointer;">
+                        <span><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; display:inline-block; margin-right:4px;"><polyline points="18 15 12 9 6 15"></polyline></svg> 2 unmodified lines</span>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">3</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"private"</span>: <span style="color: #c94446;">true</span>,</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">4</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"type"</span>: <span style="color: #52a450;">"module"</span>,</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">5</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"scripts"</span>: {</div>
+                    </div>
+                    <div class="diff-line added">
+                        <div class="line-num">6</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"build"</span>: <span style="color: #52a450;">"tsc --noEmit"</span>,</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">7</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"dev"</span>: <span style="color: #52a450;">"tsx --watch src/index.ts"</span>,</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">8</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"db:generate"</span>: <span style="color: #52a450;">"drizzle-kit generate"</span>,</div>
+                    </div>
+                    <div class="diff-line">
+                        <div class="line-num">9</div>
+                        <div class="line-content" style="padding-left: 24px;"><span style="color: #4a54b8;">"db:migrate"</span>: <span style="color: #52a450;">"drizzle-kit migrate"</span>,</div>
+                    </div>
+                    <div class="folded-lines flex justify-between items-center" style="cursor: pointer;">
+                        <span><svg class="icon" viewBox="0 0 24 24" style="width:12px; height:12px; display:inline-block; margin-right:4px;"><polyline points="6 9 12 15 18 9"></polyline></svg> 19 unmodified lines</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File 3: specs/todos/index.md -->
+            <div class="file-card">
+                <div class="file-header">
+                    <span style="font-size: 13px; font-weight: 500;">specs/todos/index.md</span>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="panel-header" style="justify-content: center; gap: 16px; background-color: var(--color-surface); border-top: 1px solid var(--color-border); border-bottom: none;">
+             <span class="text-muted flex items-center gap-1" style="cursor: pointer;"><svg class="icon" viewBox="0 0 24 24"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg> 还原全部</span>
+             <span class="text-muted flex items-center gap-1" style="cursor: pointer;"><svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> 暂存全部</span>
+        </div>
+    </aside>
+
+</body>
+</html>

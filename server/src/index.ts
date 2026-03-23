@@ -1,10 +1,13 @@
-import { Hono } from "hono";
+/**
+ * @file 应用入口
+ *
+ * Bun 的 HTTP 服务器入口，通过 default export 配置端口和 fetch handler。
+ * 所有应用逻辑在 app.ts 中组装，这里只负责启动。
+ */
 
-const app = new Hono();
+import { createApp } from "./app";
 
-app.get("/api/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
-});
+const app = createApp();
 
 export default {
   port: 3000,
