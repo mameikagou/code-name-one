@@ -61,7 +61,49 @@
 - [ ] ClaudeProvider 实现（spawn CLI + 解析 NDJSON）
 - [ ] ProviderRegistry
 
-### 前端样式优化 ⏳
-- [ ] 全局设计系统统一调整
+## Phase 7: 前端组件拆分（基于 UI 原型 index copy.html） ✅
+
+> 2026-03-24：按照 `specs/ui/index copy.html` 设计稿，将前端组件拆分为细粒度展示组件。
+> 旧 container 组件保留（数据层），新组件为纯展示层，下一步接入。
+
+### 共享 UI 原子 — `client/src/components/ui/`
+- [x] `tag.tsx` — 标签组件
+- [x] `diff-stats.tsx` — +N -M 统计显示
+- [x] `icon-button.tsx` — 图标按钮
+- [x] `code-inline.tsx` — 行内代码标签
+- [x] `panel-header.tsx` — 通用面板顶栏
+
+### Sidebar — `client/src/components/features/sidebar/`
+- [x] `pinned-conversation-item.tsx` — 置顶会话项（Pin 图标 + 时间戳）
+- [x] `project-folder-item.tsx` — 项目文件夹项
+- [x] `thread-placeholder.tsx` — "无线程" 占位符
+- [x] `sidebar-section.tsx` — 滚动区域容器
+- [x] `sidebar-footer.tsx` — 底部设置栏
+- [x] `sidebar.tsx` — 完整侧边栏组合
+
+### Chat 主面板 — `client/src/components/features/chat/`
+- [x] `breadcrumb.tsx` — 面包屑（标题 + 项目标签）
+- [x] `task-list-item.tsx` — 任务勾选项
+- [x] `summary-card.tsx` — 变更摘要卡片 + SummaryFileRow
+- [x] `model-selector.tsx` — 模型下拉选择器
+- [x] `quality-selector.tsx` — 质量档位选择器
+- [x] `send-button.tsx` — 圆形发送按钮
+- [x] `chat-input-v2.tsx` — 重写输入框（工具栏 + 模型/质量选择）
+- [x] `chat-message-area.tsx` — 聊天内容滚动区域
+- [x] `main-panel.tsx` — 完整主面板组合
+
+### Diff 面板 — `client/src/components/features/diff-viewer/`（Monaco DiffEditor）
+- [x] `monaco-diff-view.tsx` — Monaco DiffEditor 封装（跟随明暗主题）
+- [x] `file-card-header.tsx` — 文件卡片头部
+- [x] `file-card.tsx` — 文件 diff 卡片（内嵌 Monaco）
+- [x] `diff-action-bar.tsx` — 底部操作栏（还原/暂存）
+- [x] `diff-panel.tsx` — 完整 diff 面板组合
+
+### 依赖变更
+- [x] 新增 `@monaco-editor/react` + `monaco-editor`
+- [x] 清理 `pnpm-lock.yaml`（项目用 bun），`bun install` 重新生成 `bun.lock`
+
+### 待完成（下一步）
+- [ ] 将旧 container（SidebarContainer/ChatContainer/DiffContainer）切换为使用新展示组件
 - [ ] Loading skeleton / empty state 优化
 - [ ] 响应式布局适配
