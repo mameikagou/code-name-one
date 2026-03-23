@@ -5,7 +5,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { FileCard } from "./file-card";
 import { DiffActionBar } from "./diff-action-bar";
 
-interface DiffFileData {
+export interface DiffFileData {
   filename: string;
   additions: number;
   deletions: number;

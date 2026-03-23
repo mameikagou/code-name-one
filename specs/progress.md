@@ -49,18 +49,6 @@
 
 ---
 
-## 待完成
-
-### Phase 5: SSE 流式通信 ⏳
-- [ ] SSE Writer + BufferedEventLog
-- [ ] `POST /sessions/:id/run` 替换 mock POST 端点
-- [ ] 前端 EventSource hook 消费 SSE 流
-
-### Phase 6: Claude Provider ⏳
-- [ ] AI Provider 类型定义 + AbstractProvider 基类
-- [ ] ClaudeProvider 实现（spawn CLI + 解析 NDJSON）
-- [ ] ProviderRegistry
-
 ## Phase 7: 前端组件拆分（基于 UI 原型 index copy.html） ✅
 
 > 2026-03-24：按照 `specs/ui/index copy.html` 设计稿，将前端组件拆分为细粒度展示组件。
@@ -103,7 +91,38 @@
 - [x] 新增 `@monaco-editor/react` + `monaco-editor`
 - [x] 清理 `pnpm-lock.yaml`（项目用 bun），`bun install` 重新生成 `bun.lock`
 
-### 待完成（下一步）
-- [ ] 将旧 container（SidebarContainer/ChatContainer/DiffContainer）切换为使用新展示组件
+## Phase 8: 容器层接入升级版展示组件 ✅
+
+> 2026-03-24：将 Phase 7 拆分的原型级面板组件正式接入三个容器，替换旧的基础版渲染。
+> 零后端改动，零新文件，零 API 变更。
+
+### 展示组件 props 增强
+- [x] `main-panel.tsx` — 新增 `disabled` prop 透传至 `ChatInputV2`（发送中禁用输入）
+- [x] `diff-panel.tsx` — 导出 `DiffFileData` 类型供容器引用
+- [x] `sidebar.tsx` — 新增 `activeConversationId`（选中高亮）、`onNewSession` + `isCreating`（新建按钮）、空列表状态
+
+### 容器层重写
+- [x] `chat-container.tsx` — 接入 `MainPanel`（PanelHeader + Breadcrumb + ChatMessageArea + ChatInputV2），从 sessions 缓存派生会话标题
+- [x] `diff-container.tsx` — 接入 `DiffPanel`（FileCard + Monaco DiffEditor + DiffActionBar），扩展 mock 数据含 original/modified 代码字符串
+- [x] `sidebar-container.tsx` — 接入 `Sidebar`（PinnedConversationItem + ProjectFolderItem + SidebarFooter），sessions → pinnedConversations 数据映射
+
+### 验证
+- [x] TypeScript 零错误编译通过（`bunx tsc --noEmit`）
+
+---
+
+## 待完成
+
+### Phase 5: SSE 流式通信 ⏳（下一优先级）
+- [ ] SSE Writer + BufferedEventLog
+- [ ] `POST /sessions/:id/run` 替换 mock POST 端点
+- [ ] 前端 EventSource hook 消费 SSE 流
+
+### Phase 6: Claude Provider ⏳
+- [ ] AI Provider 类型定义 + AbstractProvider 基类
+- [ ] ClaudeProvider 实现（spawn CLI + 解析 NDJSON）
+- [ ] ProviderRegistry
+
+### 前端优化 ⏳
 - [ ] Loading skeleton / empty state 优化
 - [ ] 响应式布局适配

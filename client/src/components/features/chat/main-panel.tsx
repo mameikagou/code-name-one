@@ -19,6 +19,8 @@ interface MainPanelProps {
   qualityLevel?: string;
   /** 发送消息回调 */
   onSend: (message: string) => void;
+  /** 禁用输入框（如发送中） */
+  disabled?: boolean;
   onModelClick?: () => void;
   onQualityClick?: () => void;
 }
@@ -35,6 +37,7 @@ export function MainPanel({
   modelName,
   qualityLevel,
   onSend,
+  disabled,
   onModelClick,
   onQualityClick,
 }: MainPanelProps) {
@@ -56,6 +59,7 @@ export function MainPanel({
 
       <ChatInputV2
         onSend={onSend}
+        disabled={disabled}
         modelName={modelName}
         qualityLevel={qualityLevel}
         onModelClick={onModelClick}
