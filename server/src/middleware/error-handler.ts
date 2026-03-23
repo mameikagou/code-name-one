@@ -30,7 +30,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
         message: err.message,
       },
     };
-    return c.json(body, err.statusCode as 400 | 404 | 500);
+    return c.json(body, err.statusCode as 400 | 404 | 409 | 503 | 500);
   }
 
   // 3. 未知错误：返回 500，隐藏内部实现细节

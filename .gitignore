@@ -6,3 +6,11 @@ dist/
 .env.*
 bun.lockb
 data/
+
+# Claude Code plan files (临时计划文件)
+specs/plan*.md
+
+# SQLite artifacts
+*.db-journal
+*.db-wal
+*.db-shm

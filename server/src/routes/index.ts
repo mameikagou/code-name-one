@@ -7,6 +7,8 @@
 
 import type { Hono } from "hono";
 import { sessionsRoute } from "./sessions.route";
+import { projectsRoute } from "./projects.route";
+import { providersRoute } from "./providers.route";
 
 /**
  * 将所有路由挂载到 Hono app 实例上
@@ -17,6 +19,12 @@ import { sessionsRoute } from "./sessions.route";
  * @param app - Hono 应用实例
  */
 export function registerRoutes(app: Hono): void {
-  // sessions 相关路由（/api/sessions, /api/sessions/:id/messages）
+  // sessions 相关路由（/api/sessions, /api/sessions/:id/run, ...）
   app.route("/", sessionsRoute);
+
+  // projects 相关路由（/api/projects, /api/projects/:id, ...）
+  app.route("/", projectsRoute);
+
+  // providers 相关路由（/api/providers）
+  app.route("/", providersRoute);
 }

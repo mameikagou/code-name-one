@@ -164,3 +164,19 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     references: [sessions.id],
   }),
 }));
+
+// ============================================================
+// 类型别名：从 Schema 推导，供 repository/service 层使用
+// ============================================================
+
+export type Project = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
+
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;
+
+export type Preference = typeof preferences.$inferSelect;
+export type NewPreference = typeof preferences.$inferInsert;

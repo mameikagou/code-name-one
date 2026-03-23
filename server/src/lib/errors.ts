@@ -57,3 +57,29 @@ export class ValidationError extends AppError {
     super(message, 400, "VALIDATION_ERROR");
   }
 }
+
+// ============================================================
+// ConflictError：资源状态冲突 (409)
+// 使用场景：session 已在运行中，客户端再次请求 run
+// ============================================================
+
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 409, "CONFLICT");
+  }
+}
+
+// ============================================================
+// ProviderUnavailableError：AI Provider 不可用 (503)
+// 使用场景：Claude CLI 未安装、Provider 进程启动失败
+// ============================================================
+
+export class ProviderUnavailableError extends AppError {
+  constructor(provider: string, reason: string) {
+    super(
+      `Provider "${provider}" is unavailable: ${reason}`,
+      503,
+      "PROVIDER_UNAVAILABLE"
+    );
+  }
+}
